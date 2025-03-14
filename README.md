@@ -1,93 +1,97 @@
-# Rubetek Socket API
+# Sber Bulb API
 
-### Описание / Description 
-Эта библиотека предоставляет API-обертку для управления умной розеткой Rubetek RE-3305. Возможность работы с другими моделями не проверялась, но, вероятно, поддерживается. Для использования данной библиотеки необходимо быть зарегистрированным пользователем в приложении Rubetek, а также иметь устройство, добавленное в ваше приложение.
+## Описание / Description 
+Эта библиотека предоставляет API-обертку для управления умной лампочкой от Сбера A60. Возможность работы с другими моделями не проверялась. Для использования данной библиотеки необходимо быть зарегистрированным пользователем в приложении Салют!, а также иметь лампочку, добавленную в это приложение.
 
-<br>This library provides an API wrapper for controlling the Rubetek RE-3305 smart socket. While compatibility with other models has not been tested, it is likely supported. To use this library, you must be a registered user in the Rubetek app and have your device added to the app.
-
+This library provides an API wrapper for controlling the Sber A60 smart bulb. Compatibility with other models has not been tested. To use this library, you must be a registered user of the Salute! app and have the bulb added to your account.
 
 ## Установка / Installation
 ```bash
-pip install rubetek-socket-api
+pip install sber-bulb-api
 ```
 
 ## Авторизация / Authorization
-### Авторизация через код / Authorization via code
-Этот метод предназначен только для первичной авторизации. Чрезмерное использование может привести к блокировке или ограничению сервером. Получите refresh token и используйте его для будущих запросов.
 
-<br>This method is intended only for initial authorization. Frequent use may result in server-side blocking or rate limitations. Obtain a refresh token and use it for future requests.
+### Авторизация через код / Authorization via code
+Этот метод предназначен только для первичной авторизации. Чрезмерное использование может привести к блокировке или ограничению сервером. Получите refresh token и используйте метод авторизации через него.
+
+This method is only intended for initial authorization. Excessive use may result in server blocking or restrictions. Obtain a refresh token and use the refresh token authorization method instead.
+
 ```python
 import asyncio
 
-from rubetek_socket_api import RubetekSocketAPI
+from sber_smart_bulb_api import SberSmartBulbAPI
 
 PHONE = 'your_phone'
-EMAIL = 'your_email'
 
-async def sms_auth():
-    rubetek_api = RubetekSocketAPI()
-    await rubetek_api.send_code(phone=PHONE)
-    code = input('Enter the code: ')
-    await rubetek_api.change_code_to_access_token(code=code, phone=PHONE)
-    print(f'Refresh Token: {rubetek_api.refresh_token}')  # Save refresh token
-    user_info = await rubetek_api.get_user()
-    print(user_info)
-
-# OR
-    
-async def email_auth():
-    rubetek_api = RubetekSocketAPI()
-    await rubetek_api.send_code(email=EMAIL)
-    code = input('Enter the code: ')
-    await rubetek_api.change_code_to_access_token(code=code, email=EMAIL)
-    print(f'Refresh Token: {rubetek_api.refresh_token}')  # Save refresh token
-    user_info = await rubetek_api.get_user()
-    print(user_info)
+async def auth():
+    sber_api = SberSmartBulbAPI()
+    response = await sber_api.authenticate(phone=PHONE)
+    await asyncio.sleep(1)
+    sms = input('SMS: ').strip()
+    response = await sber_api.verify(ouid=response.ouid, sms_otp=sms)
+    await sber_api.get_access_token(authcode=response.authcode)
+    print(sber_api.refresh_token)  # Save refresh token
 ```
+
 ### Авторизация через refresh token / Authorization via refresh token
+**Внимание:** Refresh token одноразовый!
+
+**Warning:** The refresh token is single-use!
+
 ```python
-import asyncio
+from sber_smart_bulb_api import SberSmartBulbAPI
 
-from rubetek_socket_api import RubetekSocketAPI
-
-REFRESH_TOKEN = 'your_refresh_token'
+refresh_token = 'your_refresh_token'
 
 async def main():
-    rubetek_api = RubetekSocketAPI(refresh_token=REFRESH_TOKEN)
-    user_info = await rubetek_api.get_user()
-    print(user_info)
+    sber_api = SberSmartBulbAPI(refresh_token=refresh_token)
+    await sber_api.get_device_groups()
+    print(sber_api.refresh_token)  # Save new refresh token
 ```
 
 ## Использование / Usage
 ```python
 import asyncio
 
-from rubetek_socket_api import RubetekSocketAPI
+from sber_smart_bulb_api import SberSmartBulbAPI
+from sber_smart_bulb_api.models import DeviceSceneEnum
 
-REFRESH_TOKEN = 'your_refresh_token'
+refresh_token = 'your_refresh_token'
 
 async def main():
-    rubetek_api = RubetekSocketAPI(refresh_token=REFRESH_TOKEN)
-    houses = await rubetek_api.get_houses()
-    house_id = houses[0].id
-    devices = await rubetek_api.get_house_devices(house_id=house_id)
-    device_id = devices[0].id
-    device = await rubetek_api.get_device(house_id=house_id, device_id=device_id)
-    
+    sber_api = SberSmartBulbAPI(refresh_token=refresh_token)
+    groups = await sber_api.get_device_groups()
+    print(sber_api.refresh_token)  # Save new refresh token
+    group_id = groups.result[0].id
+    devices = await sber_api.get_device_group_tree(group_id=group_id)
+    device_id = [d.id for d in devices.devices if d.device_info.model == 'smart bulb a60'][0]
+    device = await sber_api.get_device(device_id=device_id)
+    states = await sber_api.get_device_states(device_id=device_id)
     print(
-        f'Status (on/off): {device.state.relay_on}',
-        f'RGB level: {device.state.rgb_level}',
-        f'Online status: {device.online}',
-        f'Sleep timer (minutes): {device.state.relay_mode}',
+        f'Device: {device}',
+        f'Status (on/off): {states.on_off}',
+        f'Work Mode: {states.work_mode}',
+        f'Online status: {states.online}',
+        f'Scene: {states.light_scene}',
+        f'White bright: {states.bright_value_v2}',
+        f'White temp: {states.temp_value_v2}',
+        f'Colour data: {states.colour_data_v2}',
+        f'Sleep timer (minutes): {states.sleep_timer}',
         sep='\n'
     )
-    
-    await rubetek_api.set_rgb_level(house_id=house_id, device_id=device_id, value=100)
-    await rubetek_api.set_on_off(house_id=house_id, device_id=device_id, value=not device.state.relay_on)
-    await rubetek_api.set_disable_timer(house_id=house_id, device_id=device_id, value=60)
+    await sber_api.set_on_off(device_id=device_id, value=True)
+    await sber_api.set_white(device_id=device_id, brightness=50, temp=50)
+    await asyncio.sleep(3)
+    await sber_api.set_color(device_id=device_id, h=180, s=50, v=50)
+    await asyncio.sleep(3)
+    await sber_api.set_scene(device_id=device_id, scene=DeviceSceneEnum.candle)
+    await asyncio.sleep(3)
+    await sber_api.set_timer(device_id=device_id, minutes=30)
+    await sber_api.set_on_off(device_id=device_id, value=False)
+    await sber_api.close()
 
-    await rubetek_api.close()
-
-asyncio.run(main())
+if __name__ == '__main__':
+    asyncio.run(main())
 ```
 
