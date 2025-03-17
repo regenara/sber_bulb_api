@@ -158,9 +158,9 @@ class SberSmartBulbAPI:
             with suppress(FileNotFoundError):
                 with open(self.refresh_token_path) as f:
                     self.refresh_token = f.read()
-            if not self.refresh_token:
-                self._logger.error('AuthorizationRequiredSberSmartBulbAPIError')
-                raise AuthorizationRequiredSberSmartBulbAPIError
+        if not self.refresh_token:
+            self._logger.error('AuthorizationRequiredSberSmartBulbAPIError')
+            raise AuthorizationRequiredSberSmartBulbAPIError
 
     def _save_refresh_token(self, refresh_token: str):
         if self.refresh_token_path:
