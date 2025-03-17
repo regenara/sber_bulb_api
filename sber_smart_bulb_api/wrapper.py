@@ -3,6 +3,7 @@ import base64
 import hashlib
 import logging
 import os
+from contextlib import suppress
 from datetime import datetime
 from json.decoder import JSONDecodeError
 from typing import (Any,
@@ -156,6 +157,9 @@ class SberSmartBulbAPI:
         result = AccessTokenResponse(**response)
         self._access_token = result.access_token
         self.refresh_token = result.refresh_token
+        with open('refresh_token', 'w') as f:
+            f.write(self.refresh_token)
+        self._logger.info('New refresh token saved to file refresh_token')
         return AccessTokenResponse(**response)
 
     async def _set_auth_jwt(self):
@@ -164,9 +168,13 @@ class SberSmartBulbAPI:
         self._x_auth_jwt = JWTTokenResponse(**response).token
 
     async def _refresh_access_token(self) -> AccessTokenResponse:
-        if self.refresh_token is None:
-            self._logger.error('Refresh token required')
-            raise AuthorizationRequiredSberSmartBulbAPIError
+        if not self.refresh_token:
+            with suppress(FileNotFoundError):
+                with open('refresh_token') as f:
+                    self.refresh_token = f.read()
+            if not self.refresh_token:
+                self._logger.error('Refresh token required')
+                raise AuthorizationRequiredSberSmartBulbAPIError
         data = {
             'client_id': self._client_id,
             'grant_type': 'refresh_token',
@@ -184,7 +192,7 @@ class SberSmartBulbAPI:
         Initiates authentication by sending an SMS OTP.
 
         :param phone: The phone number to receive the SMS OTP.
-                      Must start with '+' followed by the country code and number
+                      Must start by the country code without +
         """
         url = urljoin(self._sber_uapi_url, 'authenticate')
         json = {

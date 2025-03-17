@@ -22,7 +22,7 @@ import asyncio
 
 from sber_smart_bulb_api import SberSmartBulbAPI
 
-PHONE = 'your_phone'
+PHONE = '79998887766'
 
 async def auth():
     sber_api = SberSmartBulbAPI()
