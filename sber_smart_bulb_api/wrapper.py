@@ -41,10 +41,12 @@ from .models import (AccessTokenResponse,
 
 
 class SberSmartBulbAPI:
-    def __init__(self, refresh_token: Optional[str] = None, timeout: int = 30, level: logging = logging.INFO):
-        self._access_token: Optional[str] = None
+    def __init__(self, refresh_token: Optional[str] = None, refresh_token_path: str = 'sber_refresh_token',
+                 timeout: int = 30, level: logging = logging.INFO):
         self.refresh_token: Optional[str] = refresh_token
+        self.refresh_token_path: str = refresh_token_path
         self._x_auth_jwt: Optional[str] = None
+        self._access_token: Optional[str] = None
 
         self._sber_devices_url = f'https://gateway.iot.sberdevices.ru/gateway/v1/'
         self._sber_uapi_url = 'https://online.sberbank.ru/CSAFront/uapi/v2/'
@@ -157,10 +159,10 @@ class SberSmartBulbAPI:
         result = AccessTokenResponse(**response)
         self._access_token = result.access_token
         self.refresh_token = result.refresh_token
-        with open('refresh_token', 'w') as f:
+        with open(self.refresh_token_path, 'w') as f:
             f.write(self.refresh_token)
         self._logger.info('New refresh token saved to file refresh_token')
-        return AccessTokenResponse(**response)
+        return result
 
     async def _set_auth_jwt(self):
         headers = {'Authorization': f'Bearer {self._access_token}'}
@@ -170,7 +172,7 @@ class SberSmartBulbAPI:
     async def _refresh_access_token(self) -> AccessTokenResponse:
         if not self.refresh_token:
             with suppress(FileNotFoundError):
-                with open('refresh_token') as f:
+                with open(self.refresh_token_path) as f:
                     self.refresh_token = f.read()
             if not self.refresh_token:
                 self._logger.error('Refresh token required')
