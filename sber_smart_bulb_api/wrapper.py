@@ -6,6 +6,7 @@ import os
 from contextlib import suppress
 from datetime import datetime
 from json.decoder import JSONDecodeError
+from pathlib import Path
 from typing import (Any,
                     Dict,
                     List,
@@ -41,10 +42,11 @@ from .models import (AccessTokenResponse,
 
 
 class SberSmartBulbAPI:
-    def __init__(self, refresh_token: Optional[str] = None, refresh_token_path: str = 'sber_refresh_token',
+    def __init__(self, refresh_token: Optional[str] = None,
+                 refresh_token_path: Optional[Path] = Path('./sber_refresh_token'),
                  timeout: int = 30, level: logging = logging.INFO):
         self.refresh_token: Optional[str] = refresh_token
-        self.refresh_token_path: str = refresh_token_path
+        self.refresh_token_path: Optional[Path] = refresh_token_path
         self._x_auth_jwt: Optional[str] = None
         self._access_token: Optional[str] = None
 
@@ -151,6 +153,21 @@ class SberSmartBulbAPI:
             await self._refresh_access_token()
             headers['Authorization'] = f'Bearer {self._access_token}'
 
+    def _check_refresh_token(self):
+        if not self.refresh_token and self.refresh_token_path:
+            with suppress(FileNotFoundError):
+                with open(self.refresh_token_path) as f:
+                    self.refresh_token = f.read()
+            if not self.refresh_token:
+                self._logger.error('AuthorizationRequiredSberSmartBulbAPIError')
+                raise AuthorizationRequiredSberSmartBulbAPIError
+
+    def _save_refresh_token(self, refresh_token: str):
+        if self.refresh_token_path:
+            with open(self.refresh_token_path, 'w') as f:
+                f.write(refresh_token)
+            self._logger.info('New refresh token saved to file %s', self.refresh_token_path)
+
     async def _get_access_token(self, data: Dict[str, Any]) -> AccessTokenResponse:
         headers = {
             'Content-Type': 'application/x-www-form-urlencoded'
@@ -159,9 +176,7 @@ class SberSmartBulbAPI:
         result = AccessTokenResponse(**response)
         self._access_token = result.access_token
         self.refresh_token = result.refresh_token
-        with open(self.refresh_token_path, 'w') as f:
-            f.write(self.refresh_token)
-        self._logger.info('New refresh token saved to file refresh_token')
+        self._save_refresh_token(refresh_token=result.refresh_token)
         return result
 
     async def _set_auth_jwt(self):
@@ -170,13 +185,7 @@ class SberSmartBulbAPI:
         self._x_auth_jwt = JWTTokenResponse(**response).token
 
     async def _refresh_access_token(self) -> AccessTokenResponse:
-        if not self.refresh_token:
-            with suppress(FileNotFoundError):
-                with open(self.refresh_token_path) as f:
-                    self.refresh_token = f.read()
-            if not self.refresh_token:
-                self._logger.error('Refresh token required')
-                raise AuthorizationRequiredSberSmartBulbAPIError
+        self._check_refresh_token()
         data = {
             'client_id': self._client_id,
             'grant_type': 'refresh_token',
