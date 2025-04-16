@@ -1,9 +1,9 @@
 # Sber Bulb API
 
 ## Описание / Description 
-Эта библиотека предоставляет API-обертку для управления умной лампочкой от Сбера A60. Возможность работы с другими моделями не проверялась. Для использования данной библиотеки необходимо быть зарегистрированным пользователем в приложении Салют!, а также иметь лампочку, добавленную в это приложение.
+[Эта библиотека](https://pypi.org/project/sber-bulb-api/) предоставляет API-обертку для управления умной лампочкой от Сбера A60. Возможность работы с другими моделями не проверялась. Для использования данной библиотеки необходимо быть зарегистрированным пользователем в приложении Салют!, а также иметь лампочку, добавленную в это приложение.
 
-This library provides an API wrapper for controlling the Sber A60 smart bulb. Compatibility with other models has not been tested. To use this library, you must be a registered user of the Salute! app and have the bulb added to your account.
+[This library](https://pypi.org/project/sber-bulb-api/) provides an API wrapper for controlling the Sber A60 smart bulb. Compatibility with other models has not been tested. To use this library, you must be a registered user of the Salute! app and have the bulb added to your account.
 
 ## Установка / Installation
 ```bash
