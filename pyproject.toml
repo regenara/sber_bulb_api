@@ -1,6 +1,6 @@
 [project]
 name = "sber_bulb_api"
-version = "0.0.7"
+version = "0.0.8"
 description = "API wrapper for controlling the Sber smart bulb A60."
 authors = [
     { name = "regenara", email = "jakebv.22@gmail.com" }

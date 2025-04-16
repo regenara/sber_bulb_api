@@ -379,4 +379,3 @@ class SberSmartBulbAPI:
 
     async def close(self):
         await self.session.close()
-
