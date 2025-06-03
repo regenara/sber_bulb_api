@@ -39,6 +39,5 @@ publish_sber_smart_bulb_api:
       changes:
         - pyproject.toml
   script:
-    - cat /home/mstoneho/.pypirc > .pypirc
-    - twine upload -r pypi --config-file .pypirc dist/*
+    - twine upload -u __token__ -p "$PYPI_TOKEN" dist/*
   needs: ["build_sber_smart_bulb_api"]
