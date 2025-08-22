@@ -60,21 +60,21 @@ class DeviceOwner(BaseModel):
 
 class DeviceGroup(BaseModel):
     id: str
-    meta: Optional[Any]
+    meta: Optional[Any] = None
     parent_id: str
     name: str
     owner_info: DeviceOwner
     group_type: str
     address: str
     images: Dict[str, Any]
-    widgets: List[Any]
+    widgets: Optional[List[Any]] = None
     image_set_type: str
-    settings: Optional[Any]
+    settings: Optional[Any] = None
     names: Dict[str, str]
     image_set_types: Dict[str, str]
-    geo_position: Optional[Any]
+    geo_position: Optional[Any] = None
     has_geo_position: bool
-    address_details: Optional[Any]
+    address_details: Optional[Any] = None
 
 
 class Pagination(BaseModel):
@@ -136,15 +136,15 @@ class DeviceEnumValues(BaseModel):
 
 class DeviceAttribute(BaseModel):
     key: str
-    meta: Optional[Any]
+    meta: Optional[Any] = None
     type: str
-    int_values: Optional[DeviceIntValues]
-    float_values: Optional[float]
-    string_values: Optional[str]
-    enum_values: Optional[DeviceEnumValues]
+    int_values: Optional[DeviceIntValues] = None
+    float_values: Optional[float] = None
+    string_values: Optional[str] = None
+    enum_values: Optional[DeviceEnumValues] = None
     name: str
-    color_values: Optional[DeviceColorValues]
-    depends_on: Optional[str]
+    color_values: Optional[DeviceColorValues] = None
+    depends_on: Optional[str] = None
     is_visible: bool
     min_version: str
 
@@ -174,8 +174,8 @@ class DeviceState(BaseModel):
     string_value: str
     bool_value: bool
     enum_value: str
-    color_value: Optional[DeviceColorState]
-    last_sync: Optional[datetime]
+    color_value: Optional[DeviceColorState] = None
+    last_sync: Optional[datetime] = None
 
 
 class DeviceCommand(BaseModel):
@@ -186,7 +186,7 @@ class DeviceCommand(BaseModel):
 
 class DeviceFullCategory(BaseModel):
     id: str
-    meta: Optional[Any]
+    meta: Optional[Any] = None
     name: str
     images: Dict
     slug: str
@@ -200,7 +200,7 @@ class DeviceFullCategory(BaseModel):
 
 class Device(BaseModel):
     id: str
-    meta: Optional[Any]
+    meta: Optional[Any] = None
     routing_key: str
     device_type_id: str
     parent_id: str
@@ -210,7 +210,7 @@ class Device(BaseModel):
     reported_state: List[DeviceState]
     desired_state: List[DeviceState]
     commands: List[DeviceCommand]
-    sync_info: Optional[Any]
+    sync_info: Optional[Any] = None
     serial_number: str
     external_id: str
     owner_info: DeviceOwner
@@ -219,20 +219,20 @@ class Device(BaseModel):
     group_ids: List[str]
     bridge_meta: Dict
     device_type_name: str
-    correction: Optional[Any]
+    correction: Optional[Any] = None
     hw_version: str
     sw_version: str
     dependencies: Dict
     full_categories: List[DeviceFullCategory]
     widgets: List
     image_set_type: str
-    children: Optional[Any]
+    children: Optional[Any] = None
     linked: List
     connection_type: str
     coprocessor_fw_version: str
     channel: int
     wifi_bssid: str
-    local_info: Optional[Any]
+    local_info: Optional[Any] = None
 
 
 class DeviceGroupTree(BaseModel):

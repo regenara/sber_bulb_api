@@ -26,6 +26,7 @@ from .exceptions import (AuthorizationRequiredSberSmartBulbAPIError,
                          ClientConnectorSberSmartBulbAPIError,
                          TimeoutSberSmartBulbAPIError,
                          UnknownSberSmartBulbAPIError)
+from .logger import SafeLogger
 from .models import (AccessTokenResponse,
                      AuthenticateResponse,
                      ColorValidation,
@@ -92,7 +93,7 @@ class SberSmartBulbAPI:
             'Referer': self._sber_uapi_url,
             'User-Agent': 'Salute+prod%2F24.11.1.15991+%28Android+29%3B+Xiaomi+MIX+2S%29'
         }
-        self._logger = logging.getLogger('SberSmartBulbAPI')
+        self._logger = SafeLogger('SberSmartBulbAPI')
         self._logger.setLevel(level)
 
         self.session: ClientSession = ClientSession(connector=TCPConnector(ssl=False),
@@ -107,7 +108,8 @@ class SberSmartBulbAPI:
                             data: Dict[str, Any] = None, headers: Dict[str, Any] = None) -> Dict[str, Any]:
         headers = headers or {'x-auth-jwt': self._x_auth_jwt}
         request_id = uuid4().hex
-        self._logger.info('Request=%s method=%s url=%s json=%s data=%s', request_id, method, url, json, data)
+        self._logger.info('Request=%s method=%s url=%s json=%s data=%s headers=%s', request_id, method, url,
+                          json, data, headers)
         await self._check_tokens(headers=headers)
         try:
             async with self.session.request(method, url, json=json, data=data, headers=headers) as response:
@@ -121,8 +123,9 @@ class SberSmartBulbAPI:
                 return json_response
 
         except (JSONDecodeError, ContentTypeError) as e:
-            self._logger.error('Response=%s unsuccessful request status=%s reason=%s error=%s',
-                               request_id, response.status, response.reason, e)
+            raw_response = await response.text()
+            self._logger.error('Response=%s unsuccessful request status=%s reason=%s raw=% error=%s',
+                               request_id, response.status, response.reason, raw_response, e)
             raise UnknownSberSmartBulbAPIError(f'Unknown error: {response.status} {response.reason}')
 
         except asyncio.exceptions.TimeoutError:
