@@ -113,20 +113,22 @@ class SberSmartBulbAPI:
         await self._check_tokens(headers=headers)
         try:
             async with self.session.request(method, url, json=json, data=data, headers=headers) as response:
-                json_response = await response.json()
+                try:
+                    json_response = await response.json()
+                except (JSONDecodeError, ContentTypeError) as e:
+                    raw_response = await response.text()
+                    self._logger.error('Response=%s unsuccessful request status=%s reason=%s raw=%s error=%s',
+                                       request_id, response.status, response.reason, raw_response, e)
+                    raise UnknownSberSmartBulbAPIError(f'Unknown error: {response.status} {response.reason}')
+
                 if response.status != 200:
-                    self._logger.error('Response=%s unsuccessful request json_response=%s', request_id, json_response)
+                    self._logger.error('Response=%s unsuccessful request status=%s reason=%s json_response=%s',
+                                       request_id, response.status, response.reason, json_response)
                     state = json_response.get('state', {})
                     raise UnknownSberSmartBulbAPIError(f'{state.get("title") or "Error"}: '
                                                        f'{state.get("message") or json_response}')
                 self._logger.info('Response=%s json_response=%s', request_id, json_response)
                 return json_response
-
-        except (JSONDecodeError, ContentTypeError) as e:
-            raw_response = await response.text()
-            self._logger.error('Response=%s unsuccessful request status=%s reason=%s raw=% error=%s',
-                               request_id, response.status, response.reason, raw_response, e)
-            raise UnknownSberSmartBulbAPIError(f'Unknown error: {response.status} {response.reason}')
 
         except asyncio.exceptions.TimeoutError:
             self._logger.error('Response=%s TimeoutSberSmartBulbAPIError', request_id)
